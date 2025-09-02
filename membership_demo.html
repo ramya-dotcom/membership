@@ -1390,6 +1390,204 @@
             `;
         }
 
+        async function generateMembershipCard(membershipData) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    // Set canvas size to match the image
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    // Draw the template image
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Configure text properties
+                    ctx.fillStyle = '#000000'; // Black text
+                    ctx.fontFamily = 'Arial, sans-serif';
+                    
+                    // Map user data to card positions based on BSP template
+                    const textMappings = [
+                        // ID NO field (top left)
+                        { 
+                            text: membershipData.idNumber || 'TN000001', 
+                            x: 105, 
+                            y: 148, 
+                            fontSize: 12, 
+                            fontWeight: 'bold' 
+                        },
+                        
+                        // MEMBERSHIP NO field (center top)
+                        { 
+                            text: membershipData.membershipNumber || 'string', 
+                            x: 365, 
+                            y: 148, 
+                            fontSize: 12, 
+                            fontWeight: 'bold' 
+                        },
+                        
+                        // ACTIVE NO field (top right)
+                        { 
+                            text: membershipData.activeNumber || 'string', 
+                            x: 572, 
+                            y: 148, 
+                            fontSize: 12, 
+                            fontWeight: 'bold' 
+                        },
+                        
+                        // Name field
+                        { 
+                            text: membershipData.fullName || 'STRING', 
+                            x: 210, 
+                            y: 189, 
+                            fontSize: 14, 
+                            fontWeight: 'bold' 
+                        },
+                        
+                        // Profession field
+                        { 
+                            text: membershipData.profession || 'string', 
+                            x: 210, 
+                            y: 210, 
+                            fontSize: 12, 
+                            fontWeight: 'normal' 
+                        },
+                        
+                        // Designation field
+                        { 
+                            text: membershipData.designation || 'string', 
+                            x: 210, 
+                            y: 231, 
+                            fontSize: 12, 
+                            fontWeight: 'normal' 
+                        },
+                        
+                        // Mandal field
+                        { 
+                            text: membershipData.mandal || 'string', 
+                            x: 210, 
+                            y: 252, 
+                            fontSize: 12, 
+                            fontWeight: 'normal' 
+                        },
+                        
+                        // D.O.B field
+                        { 
+                            text: membershipData.dob || 'string', 
+                            x: 210, 
+                            y: 273, 
+                            fontSize: 12, 
+                            fontWeight: 'normal' 
+                        },
+                        
+                        // Blood Group field
+                        { 
+                            text: membershipData.bloodGroup || 'string', 
+                            x: 210, 
+                            y: 294, 
+                            fontSize: 12, 
+                            fontWeight: 'normal' 
+                        },
+                        
+                        // Contact No field
+                        { 
+                            text: membershipData.contactNumber || '0000000000', 
+                            x: 210, 
+                            y: 315, 
+                            fontSize: 12, 
+                            fontWeight: 'normal' 
+                        },
+                        
+                        // Address field (with text wrapping)
+                        { 
+                            text: membershipData.address || 'string', 
+                            x: 210, 
+                            y: 336, 
+                            fontSize: 11, 
+                            fontWeight: 'normal', 
+                            maxWidth: 250 
+                        }
+                    ];
+                    
+                    // Draw each text field
+                    textMappings.forEach(mapping => {
+                        ctx.font = `${mapping.fontWeight} ${mapping.fontSize}px ${ctx.fontFamily}`;
+                        
+                        if (mapping.maxWidth) {
+                            // Handle text wrapping for long text like address
+                            wrapText(ctx, mapping.text, mapping.x, mapping.y, mapping.maxWidth, mapping.fontSize + 2);
+                        } else {
+                            ctx.fillText(mapping.text, mapping.x, mapping.y);
+                        }
+                    });
+                    
+                    resolve(canvas);
+                };
+                
+                img.onerror = function() {
+                    reject(new Error('Failed to load card template image'));
+                };
+                
+                // Load your card template image
+                img.src = './card_template.png'; // Adjust path as needed
+            });
+        }
+
+        // Helper function to wrap text within specified width
+        function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let currentY = y;
+            
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+                
+                if (testWidth > maxWidth && n > 0) {
+                    ctx.fillText(line, x, currentY);
+                    line = words[n] + ' ';
+                    currentY += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, x, currentY);
+        }
+
+        // // Example usage:
+        // const sampleMemberData = {
+        //     idNumber: 'TN000001',
+        //     membershipNumber: '12345',
+        //     activeNumber: 'ACT001',
+        //     fullName: 'JOHN DOE',
+        //     profession: 'Software Engineer',
+        //     designation: 'Senior Developer',
+        //     mandal: 'Chennai Central',
+        //     dob: '01/01/1990',
+        //     bloodGroup: 'B+',
+        //     contactNumber: '9876543210',
+        //     address: 'No. 123, Main Street, Chennai, Tamil Nadu - 600001'
+        // };
+
+        // Generate the card
+        generateMembershipCard(sampleMemberData)
+            .then(canvas => {
+                // Append to document or convert to image
+                document.body.appendChild(canvas);
+                
+                // Or convert to blob/data URL
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    console.log('Card generated:', url);
+                });
+            })
+            .catch(error => {
+                console.error('Error generating card:', error);
+            });
+
         function goToStep(step) {
             // Hide all steps
             document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
@@ -1413,8 +1611,40 @@
             alert('Receipt download functionality will be implemented with PDF generation library.');
         }
 
-        function downloadMembershipCard() {
-            alert('Membership card generation functionality will be implemented with card template.');
+        async function downloadMembershipCard() {
+            try {
+                // Show loading state
+                const originalText = event.target.textContent;
+                event.target.textContent = 'Generating Card...';
+                event.target.disabled = true;
+                
+                // Generate the card with user data
+                const canvas = await generateMembershipCard(userData);
+                
+                // Convert canvas to blob and download
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `TNBSP_Membership_Card_${userData.membershipId || 'TN000001'}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    // Restore button state
+                    event.target.textContent = originalText;
+                    event.target.disabled = false;
+                }, 'image/png');
+                
+            } catch (error) {
+                console.error('Error generating membership card:', error);
+                alert('Error generating membership card. Please try again.');
+                
+                // Restore button state
+                event.target.textContent = 'Download Membership Card';
+                event.target.disabled = false;
+            }
         }
 
         function goToHome() {
@@ -1454,6 +1684,5 @@
         }
         */
     </script>
-    <script src="membership-integration.js"></script>
 </body>
 </html>
